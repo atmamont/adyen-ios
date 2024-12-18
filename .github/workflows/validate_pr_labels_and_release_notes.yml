@@ -49,7 +49,7 @@ jobs:
 
           # Check if PR has any labels
           if [ ${#PR_LABELS_ARRAY[@]} -eq 0 ]; then
-            FORMATTED_LABELS=$(printf "'%s', " "${ALLOWED_LABELS_ARRAY[@]}" | sed 's/, $//')
+            FORMATTED_LABELS=$(printf "\`%s\`, " "${ALLOWED_LABELS_ARRAY[@]}" | sed 's/, $//')
             echo -e "${RED}Error: Pull request must have at least one label from the following list: ${ALLOWED_LABELS_ARRAY[@]}${NC}"
             ERROR_MESSAGE="This pull request does not contain a valid label. Please add one of the following labels: [${FORMATTED_LABELS}]"
             echo "error_message=${ERROR_MESSAGE}" >> $GITHUB_OUTPUT
