@@ -35,19 +35,24 @@ jobs:
           result-encoding: string
 
       - name: Validate labels and release notes
+        id: validate
         run: |
-          ALLOWED_LABELS="$ALLOWED_LABELS,chore,improvement"
+          ALLOWED_LABELS="$ALLOWED_LABELS"
           IFS=',' read -r -a ALLOWED_LABELS_ARRAY <<< "$ALLOWED_LABELS"
           IFS=',' read -r -a PR_LABELS_ARRAY <<< "$PR_LABELS"
           
           SHOULD_FAIL_JOB="false"
+          ERROR_MESSAGE=""
 
           RED='\033[0;31m'
           NC='\033[0m'
 
           # Check if PR has any labels
           if [ ${#PR_LABELS_ARRAY[@]} -eq 0 ]; then
+            FORMATTED_LABELS=$(printf "'%s', " "${ALLOWED_LABELS_ARRAY[@]}" | sed 's/, $//')
             echo -e "${RED}Error: Pull request must have at least one label from the following list: ${ALLOWED_LABELS_ARRAY[@]}${NC}"
+            ERROR_MESSAGE="This pull request does not contain a valid label. Please add one of the following labels: [${FORMATTED_LABELS}]"
+            echo "error_message=${ERROR_MESSAGE}" >> $GITHUB_OUTPUT
             exit 1
           fi
           
@@ -56,6 +61,7 @@ jobs:
             if [[ ! " ${ALLOWED_LABELS_ARRAY[@]} " =~ " ${LABEL} " ]]; then
               echo -e "${RED}Invalid label found: $LABEL${NC}"
               SHOULD_FAIL_JOB="true"
+              ERROR_MESSAGE="This pull request contains invalid label: '${LABEL}'. Please use one of the following labels: [${FORMATTED_LABELS}]"
             fi
           done
           
@@ -71,14 +77,29 @@ jobs:
               if [[ -z "$FEATURE_RELEASE_NOTE" ]]; then
                  echo -e "${RED}Pull requests labeled with '$LABEL' must have the release note in the pull request body in the following format '<$LABEL> {THE RELEASE NOTE}  </$LABEL>'${NC}"
                  SHOULD_FAIL_JOB="true"
+                 ERROR_MESSAGE="${ERROR_MESSAGE}"$'\n'"Pull requests labeled with '${LABEL}' must have the release note in the pull request body in the following format '<${LABEL}> {THE RELEASE NOTE} </${LABEL}>'"
               fi
             fi
           done
           
           if [[ "$SHOULD_FAIL_JOB" == "true" ]]; then
+            echo "error_message=${ERROR_MESSAGE}" >> $GITHUB_OUTPUT
             exit 1
           fi
         env:
           PR_BODY: ${{github.event.pull_request.body}}
           PR_LABELS: ${{steps.pr-labels.outputs.labels}}
           ALLOWED_LABELS: ${{ steps.get-allowed_labels.outputs.LABELS }}
+
+      - name: Post error comment if validation fails
+        if: failure() && steps.validate.outputs.error_message != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const errorMessage = `${{ steps.validate.outputs.error_message }}`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: errorMessage
+            });
