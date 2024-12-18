@@ -31,7 +31,9 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            return context.payload.pull_request.labels.map(l => l.name).join(',');
+            const labels = context.payload.pull_request.labels.map(l => l.name).join(',');
+            console.log('Debug: Found PR labels:', labels); 
+            core.setOutput('labels', labels);
           result-encoding: string
 
       - name: Validate labels and release notes
