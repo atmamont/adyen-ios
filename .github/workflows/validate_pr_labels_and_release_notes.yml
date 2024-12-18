@@ -41,6 +41,10 @@ jobs:
           IFS=',' read -r -a ALLOWED_LABELS_ARRAY <<< "$ALLOWED_LABELS"
           IFS=',' read -r -a PR_LABELS_ARRAY <<< "$PR_LABELS"
           
+          echo "Debug info:"
+          echo "Allowed labels: ${ALLOWED_LABELS_ARRAY[@]}"
+          echo "PR labels: ${PR_LABELS_ARRAY[@]}"
+          
           SHOULD_FAIL_JOB="false"
           ERROR_MESSAGE=""
 
