@@ -45,6 +45,11 @@ jobs:
           RED='\033[0;31m'
           NC='\033[0m'
 
+          # Check if PR has any labels
+          if [ ${#PR_LABELS_ARRAY[@]} -eq 0 ]; then
+            echo -e "${RED}Error: Pull request must have at least one label from the following list: ${ALLOWED_LABELS_ARRAY[@]}${NC}"
+            exit 1
+          fi
           
           # Validate labels exist in allowed list
           for LABEL in "${PR_LABELS_ARRAY[@]}"; do
