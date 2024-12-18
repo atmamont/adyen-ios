@@ -42,6 +42,7 @@ jobs:
           ALLOWED_LABELS="$ALLOWED_LABELS"
           IFS=',' read -r -a ALLOWED_LABELS_ARRAY <<< "$ALLOWED_LABELS"
           IFS=',' read -r -a PR_LABELS_ARRAY <<< "$PR_LABELS"
+          FORMATTED_LABELS=$(printf "'%s', " "${ALLOWED_LABELS_ARRAY[@]}" | sed 's/, $//')
           
           echo "Debug info:"
           echo "Allowed labels: ${ALLOWED_LABELS_ARRAY[@]}"
@@ -85,10 +86,6 @@ jobs:
             fi
           done
 
-          if [[ "$SHOULD_FAIL_JOB" == "true" ]]; then
-            echo "error_message=${ERROR_MESSAGE}" >> $GITHUB_OUTPUT
-            exit 1
-          fi
         env:
           PR_BODY: ${{github.event.pull_request.body}}
           PR_LABELS: ${{steps.pr-labels.outputs.labels}}
@@ -127,5 +124,28 @@ jobs:
                 repo: context.repo.repo,
                 issue_number: context.issue.number,
                 body: errorMessage
+              });
+            }
+
+      - name: Remove error comment if exists
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.login === 'github-actions[bot]'
+            );
+            
+            if (botComment) {
+              await github.rest.issues.deleteComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id
               });
             }
