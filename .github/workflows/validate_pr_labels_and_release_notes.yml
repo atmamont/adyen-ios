@@ -79,7 +79,7 @@ jobs:
               cmd="awk '/<$LABEL>.*<\/$LABEL>/'"
               FEATURE_RELEASE_NOTE="$(echo $PR_BODY | eval $cmd)"
               if [[ -z "$FEATURE_RELEASE_NOTE" ]]; then
-                 ERROR_MESSAGE="❌ Pull requests labeled with '${LABEL}' must have the release note in the pull request body in the following format \`\` \`<${LABEL}> {THE RELEASE NOTE} </${LABEL}>\` \`\`"
+                 ERROR_MESSAGE="❌ Pull requests labeled with '${LABEL}' must have the release note in the pull request body in the following format \`\` \`<${LABEL}> THE RELEASE NOTE </${LABEL}>\` \`\`"
                  SHOULD_FAIL=true
                  break
               fi
