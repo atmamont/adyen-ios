@@ -48,6 +48,7 @@ jobs:
           echo "Allowed labels: ${ALLOWED_LABELS_ARRAY[@]}"
           echo "PR labels: ${PR_LABELS_ARRAY[@]}"
           
+          SHOULD_FAIL=false
           ERROR_MESSAGE=""
 
           RED='\033[0;31m'
@@ -56,16 +57,15 @@ jobs:
           # Check if PR has any labels
           if [ ${#PR_LABELS_ARRAY[@]} -eq 0 ]; then
             ERROR_MESSAGE="This pull request does not contain a valid label. Please add one of the following labels: [${FORMATTED_LABELS}]"
-            echo "error_message=${ERROR_MESSAGE}" >> $GITHUB_OUTPUT
-            exit 1
+            SHOULD_FAIL=true
           fi
 
           # Validate labels exist in allowed list
           for LABEL in "${PR_LABELS_ARRAY[@]}"; do
             if [[ ! " ${ALLOWED_LABELS_ARRAY[@]} " =~ " ${LABEL} " ]]; then
               ERROR_MESSAGE="This pull request contains invalid label: '${LABEL}'. Please use one of the following labels: [${FORMATTED_LABELS}]"
-              echo "error_message=${ERROR_MESSAGE}" >> $GITHUB_OUTPUT
-              exit 1
+              SHOULD_FAIL=true
+              break
             fi
           done
 
@@ -79,14 +79,19 @@ jobs:
               cmd="awk '/<$LABEL>.*<\/$LABEL>/'"
               FEATURE_RELEASE_NOTE="$(echo $PR_BODY | eval $cmd)"
               if [[ -z "$FEATURE_RELEASE_NOTE" ]]; then
-                 echo "Debug: Failing due to missing release note for label: ${LABEL}"
                  ERROR_MESSAGE="Pull requests labeled with '${LABEL}' must have the release note in the pull request body in the following format '<${LABEL}> {THE RELEASE NOTE} </${LABEL}>'"
-                 echo "error_message=${ERROR_MESSAGE}" >> $GITHUB_OUTPUT
-                 exit 1
+                 SHOULD_FAIL=true
+                 break
               fi
             fi
           done
 
+          if [ "$SHOULD_FAIL" = true ]; then
+            echo "$ERROR_MESSAGE"
+            echo "error_message=${ERROR_MESSAGE}" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          
         env:
           PR_BODY: ${{github.event.pull_request.body}}
           PR_LABELS: ${{steps.pr-labels.outputs.labels}}
