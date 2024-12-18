@@ -56,14 +56,14 @@ jobs:
 
           # Check if PR has any labels
           if [ ${#PR_LABELS_ARRAY[@]} -eq 0 ]; then
-            ERROR_MESSAGE="This pull request does not contain a valid label. Please add one of the following labels: [${FORMATTED_LABELS}]"
+            ERROR_MESSAGE="❌ This pull request does not contain a valid label. Please add one of the following labels: [${FORMATTED_LABELS}]"
             SHOULD_FAIL=true
           fi
 
           # Validate labels exist in allowed list
           for LABEL in "${PR_LABELS_ARRAY[@]}"; do
             if [[ ! " ${ALLOWED_LABELS_ARRAY[@]} " =~ " ${LABEL} " ]]; then
-              ERROR_MESSAGE="This pull request contains invalid label: '${LABEL}'. Please use one of the following labels: [${FORMATTED_LABELS}]"
+              ERROR_MESSAGE="❌ This pull request contains invalid label: '${LABEL}'. Please use one of the following labels: [${FORMATTED_LABELS}]"
               SHOULD_FAIL=true
               break
             fi
@@ -79,7 +79,7 @@ jobs:
               cmd="awk '/<$LABEL>.*<\/$LABEL>/'"
               FEATURE_RELEASE_NOTE="$(echo $PR_BODY | eval $cmd)"
               if [[ -z "$FEATURE_RELEASE_NOTE" ]]; then
-                 ERROR_MESSAGE="Pull requests labeled with '${LABEL}' must have the release note in the pull request body in the following format '<${LABEL}> {THE RELEASE NOTE} </${LABEL}>'"
+                 ERROR_MESSAGE="❌ Pull requests labeled with '${LABEL}' must have the release note in the pull request body in the following format '<${LABEL}> {THE RELEASE NOTE} </${LABEL}>'"
                  SHOULD_FAIL=true
                  break
               fi
@@ -103,7 +103,7 @@ jobs:
         with:
           script: |
             const commentIdentifier = '<!-- pr-labels-check -->';
-            const errorMessage = `${{ steps.validate.outputs.error_message }}`;
+            const errorMessage = `${commentIdentifier}\n${`${{ steps.validate.outputs.error_message }}`}`;
 
             // First find if we already have a comment from the bot
             const { data: comments } = await github.rest.issues.listComments({
