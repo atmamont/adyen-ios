@@ -4,6 +4,7 @@ on:
     types: [opened, synchronize, reopened, labeled, unlabeled, edited]
 permissions:
   pull-requests: write
+  issues: write
 jobs:
   get-pr-labels:
     runs-on: ubuntu-latest
